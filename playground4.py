@@ -7,7 +7,7 @@ import time
 
 
 class CallbackTask(Task):
-    def __init__(self, ai_device, ai_channels, do_device, samp_rate, secs, write, sync_clock, parent):
+    def __init__(self, ai_device, ai_channels, do_device, samp_rate, secs, write, sync_clock, lick_fraction, parent):
         Task.__init__(self)
         self.data = np.zeros(1000)
         self.analogData = []
@@ -15,6 +15,7 @@ class CallbackTask(Task):
 
         self.windowlength = 20000
         self.triallength = secs*samp_rate
+        self.lick_fraction = lick_fraction
 
         self.CreateAIVoltageChan(ai_device, "", DAQmx_Val_Diff, -10.0, 10.0, DAQmx_Val_Volts, None)
 
@@ -31,17 +32,15 @@ class CallbackTask(Task):
             print('a getting big', len(self.analogData))
             current_length = len(self.analogData)
             self.window = pd.Series(self.analogData[(current_length-self.windowlength):current_length])
-            self.response = self.AnalyseLicks(self.window, 2, 0.1)
+            self.response = self.AnalyseLicks(self.window, 2, self.lick_fraction)
             if self.response:
-                self.parent.Complete()
+                self.parent.CallbackComplete()
                 print(self.response)
-                print(self.window)
+                # print(self.window)
             elif len(self.analogData) >= self.triallength:
-                self.parent.Complete()
+                self.parent.CallbackComplete()
                 print(self.response)
-                print(self.window)
-
-
+                # print(self.window)
 
         return 0 # The function should return an integer
 
@@ -61,14 +60,14 @@ class CallbackTask(Task):
 
 
 class Global:
-    def __init__(self, ai_device, ai_channels, do_device, samp_rate, secs, write, sync_clock):
+    def __init__(self, ai_device, ai_channels, do_device, samp_rate, secs, write, sync_clock, lick_fraction):
         Task.__init__(self)
         # create tasks
-        self.analog_input = CallbackTask(ai_device, ai_channels, do_device, samp_rate, secs, write, sync_clock, self)
+        self.analog_input = CallbackTask(ai_device, ai_channels, do_device, samp_rate, secs, write, sync_clock, lick_fraction, self)
         self.digital_output = Task()
 
-        #add channels
-        #self.analog_input.CreateAIVoltageChan(ai_device, "", DAQmx_Val_Diff, -10.0, 10.0, DAQmx_Val_Volts, None)
+        # add channels
+        # self.analog_input.CreateAIVoltageChan(ai_device, "", DAQmx_Val_Diff, -10.0, 10.0, DAQmx_Val_Volts, None)
         self.digital_output.CreateDOChan(do_device, "", DAQmx_Val_ChanForAllLines)
 
         self.ai_read = int32()
@@ -93,8 +92,11 @@ class Global:
 
         self.analog_input.ReadAnalogF64(1000, 10.0, DAQmx_Val_GroupByChannel, self.analog_input.data, 1000, byref(self.ai_read), None)
 
+    def CallbackComplete(self):
+        self.lick_data = self.analog_input.analogData
+        self.StopAll()
 
-    def Complete(self):
+    def StopAll(self):
         self.analog_input.StopTask()
         self.digital_output.StopTask()
         self.analog_input.ClearTask()
@@ -103,7 +105,7 @@ class Global:
 
 
 
-task = Global("Mod2/ai3", "", "Mod1/port0/line0", 10000.0, 6.0, numpy.zeros((2, 1000)), "/cDaQ/ai/SampleClock")
+task = Global("Mod2/ai3", "", "Mod1/port0/line0", 10000.0, 6.0, numpy.zeros((2, 1000)), "/cDaQ/ai/SampleClock", 0.1)
 task.StartThisTask()
 
 input('Acquiring samples continuously. Press Enter to interrupt\n')
