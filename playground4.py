@@ -57,9 +57,7 @@ class CallbackTask(Task):
         # return whether this is accepted as a response or not
         return percent_responded >= percent_accepted
 
-
-
-class Global:
+class DoAiMultiTaskCallback:
     def __init__(self, ai_device, ai_channels, do_device, samp_rate, secs, write, sync_clock, lick_fraction):
         Task.__init__(self)
         # create tasks
@@ -104,8 +102,7 @@ class Global:
 
 
 
-
-task = Global("Mod2/ai3", "", "Mod1/port0/line0", 10000.0, 6.0, numpy.zeros((2, 1000)), "/cDaQ/ai/SampleClock", 0.1)
+task = DoAiMultiTaskCallback("Mod2/ai3", "", "Mod1/port0/line0", 10000.0, 6.0, numpy.zeros((2, 1000)), "/cDaQ/ai/SampleClock", 0.1)
 task.StartThisTask()
 
 input('Acquiring samples continuously. Press Enter to interrupt\n')

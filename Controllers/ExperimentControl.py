@@ -8,6 +8,8 @@ import scipy.io as sio
 import HelperFunctions.RFID as rfid
 import HelperFunctions.Reward as reward
 import HelperFunctions.BeamCheck as beam
+import numpy as np
+import pandas as pd
 
 
 class ExperimentWorker(QtCore.QObject):
@@ -37,23 +39,25 @@ class ExperimentWorker(QtCore.QObject):
                 pulses, t = PulseInterface.make_pulse(self.hardware_prefs['samp_rate'], 0.0, 0.0, current_trial_pulse)
 
                 """ Send the data to the DAQ """
-                trial_daq = daq.DoAiMultiTask(self.hardware_prefs['analog_input'],
+                trial_daq = daq.DoAiMultiTaskCallback(self.hardware_prefs['analog_input'],
                                                 self.hardware_prefs['analog_channels'],
                                                 self.hardware_prefs['digital_output'],
                                                 self.hardware_prefs['samp_rate'],
                                                 len(t) / self.hardware_prefs['samp_rate'],
-                                                pulses, self.hardware_prefs['sync_clock'])
+                                                pulses, self.hardware_prefs['sync_clock'], float(current_trial_pulse[0]['lick_fraction']))
 
-                analog_data = trial_daq.DoTask()
+                trial_daq.StartThisTask()
                 #print(time() - start)
-                lick_data = analog_data[self.hardware_prefs['lick_channel']]
-                self.experiment.last_data = lick_data
+                analog_data = trial_daq.lick_data
+                self.experiment.last_data = analog_data
 
                 """ Analyse the lick response """
+                windowlength = trial_daq.analog_input.windowlength
                 rewarded = current_trial[0]
+                lick_data_window = pd.Series(analog_data[-windowlength:])
                 # TODO - reference to rewarded (current_trial[0]) and lick fraction are bug prone here.
                 # TODO - A little too inflexible
-                response = TrialConditions.lick_detect(lick_data, 2, float(current_trial_pulse[0]['lick_fraction']))
+                response = TrialConditions.lick_detect(lick_data_window, 2, float(current_trial_pulse[0]['lick_fraction']))
                 result, correct, timeout = TrialConditions.trial_result(rewarded, response)
 
                 """ Update database """
