@@ -47,14 +47,15 @@ class ExperimentWorker(QtCore.QObject):
                                                 pulses, self.hardware_prefs['sync_clock'], float(current_trial_pulse[0]['lick_fraction']))
 
                 trial_daq.StartThisTask()
-                #print(time() - start)
+                delay = (time() - start)
+                print("delay is: {}".format(delay))
                 analog_data = trial_daq.lick_data
                 self.experiment.last_data = analog_data
 
                 """ Analyse the lick response """
                 windowlength = trial_daq.analog_input.windowlength
                 rewarded = current_trial[0]
-                lick_data_window = pd.Series(analog_data[-windowlength:])
+                lick_data_window = analog_data[-windowlength:]
                 # TODO - reference to rewarded (current_trial[0]) and lick fraction are bug prone here.
                 # TODO - A little too inflexible
                 response = TrialConditions.lick_detect(lick_data_window, 2, float(current_trial_pulse[0]['lick_fraction']))
