@@ -1,5 +1,6 @@
 import numpy as np
 from PyDAQmx import *
+from ctypes import *
 import pandas as pd
 
 
@@ -8,7 +9,7 @@ class CallbackTask(Task):
         Task.__init__(self)
         self.data = np.zeros(1000)
         self.a = []
-        self.CreateAIVoltageChan("Mod2/ai3", "", DAQmx_Val_Diff, -10.0, 10.0, DAQmx_Val_Volts, None)
+        self.CreateAIVoltageChan("Mod2/ai3", "", DAQmx_Val_Cfg_Default, -10.0, 10.0, DAQmx_Val_Volts, None)
         self.CfgSampClkTiming("", 10000.0, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 1000)
 
         self.AutoRegisterEveryNSamplesEvent(DAQmx_Val_Acquired_Into_Buffer, 1000, 0)
@@ -43,6 +44,7 @@ class CallbackTask(Task):
         return 0 # The function should return an integer
 
     def Complete(self):
+        print(self.a)
         self.StopTask()
         self.ClearTask()
 

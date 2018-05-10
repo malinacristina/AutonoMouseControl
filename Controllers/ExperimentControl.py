@@ -44,7 +44,8 @@ class ExperimentWorker(QtCore.QObject):
                                                 self.hardware_prefs['digital_output'],
                                                 self.hardware_prefs['samp_rate'],
                                                 len(t) / self.hardware_prefs['samp_rate'],
-                                                pulses, self.hardware_prefs['sync_clock'], float(current_trial_pulse[0]['lick_fraction']))
+                                                pulses, self.hardware_prefs['sync_clock'],
+                                                float(current_trial_pulse[0]['lick_fraction']), 2.0)
 
                 trial_daq.StartThisTask()
                 delay = (time() - start)
