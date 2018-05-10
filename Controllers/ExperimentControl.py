@@ -39,24 +39,29 @@ class ExperimentWorker(QtCore.QObject):
                 pulses, t = PulseInterface.make_pulse(self.hardware_prefs['samp_rate'], 0.0, 0.0, current_trial_pulse)
 
                 """ Send the data to the DAQ """
-                trial_daq = daq.DoAiMultiTaskCallback(self.hardware_prefs['analog_input'],
-                                                self.hardware_prefs['analog_channels'],
-                                                self.hardware_prefs['digital_output'],
-                                                self.hardware_prefs['samp_rate'],
-                                                len(t) / self.hardware_prefs['samp_rate'],
-                                                pulses, self.hardware_prefs['sync_clock'],
-                                                float(current_trial_pulse[0]['lick_fraction']), 2.0)
+                samps_per_callback = 20000
+                response_length_secs = 2
+                response_start_secs = 2
+                trial_daq = daq.DoAiCallbackTask(self.hardware_prefs['analog_input'],
+                                                 self.hardware_prefs['analog_channels'],
+                                                 self.hardware_prefs['digital_output'],
+                                                 self.hardware_prefs['samp_rate'],
+                                                 len(t) / self.hardware_prefs['samp_rate'],
+                                                 pulses, self.hardware_prefs['sync_clock'],
+                                                 samps_per_callback,
+                                                 response_length_secs,
+                                                 response_start_secs,
+                                                 float(current_trial_pulse[0]['lick_fraction']))
 
-                trial_daq.StartThisTask()
+                trial_daq.DoTask()
                 delay = (time() - start)
                 print("delay is: {}".format(delay))
-                analog_data = trial_daq.lick_data
+                analog_data = trial_daq.analog_data
                 self.experiment.last_data = analog_data
 
                 """ Analyse the lick response """
-                windowlength = trial_daq.analog_input.windowlength
                 rewarded = current_trial[0]
-                lick_data_window = analog_data[-windowlength:]
+                lick_data_window = trial_daq.response_window
                 # TODO - reference to rewarded (current_trial[0]) and lick fraction are bug prone here.
                 # TODO - A little too inflexible
                 response = TrialConditions.lick_detect(lick_data_window, 2, float(current_trial_pulse[0]['lick_fraction']))

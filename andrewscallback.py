@@ -6,8 +6,8 @@ import daqface.Utils as Util
 import matplotlib.pyplot as plt
 
 
-class TypeList(list):
-    pass
+# class TypeList(list):
+#     pass
 
 
 class DoAiCallbackTask:
@@ -21,6 +21,7 @@ class DoAiCallbackTask:
         self.response_length = response_length_secs * samp_rate
         self.response_start = response_start_secs * samp_rate
         self.lick_fraction = lick_fraction
+        self.response_window = []
 
         # set up data buffers (analog)
         self.analog_data = np.zeros((self.ai_channels, self.total_length), dtype=np.float64)
@@ -53,11 +54,11 @@ class DoAiCallbackTask:
         print(np.sum(data_of_interest))
 
         current_pos = self.samps_per_callback * self.callback_counter
-        response_window = data_of_interest[(current_pos - self.response_length):current_pos]
-        print(response_window.shape)
+        self.response_window = data_of_interest[(current_pos - self.response_length):current_pos]
+        print(self.response_window.shape)
 
         if current_pos >= self.response_start:
-            response = self.AnalyseLicks(response_window, 2, self.lick_fraction)
+            response = self.AnalyseLicks(self.response_window, 2, self.lick_fraction)
             if response:
                 print('animal licked')
                 DAQmxTaskControl(self.ai_handle, DAQmx_Val_Task_Abort)
@@ -113,9 +114,9 @@ class DoAiCallbackTask:
         DAQmxClearTask(self.do_handle)
 
 
-dummy_write = np.zeros((1, 10000), dtype=np.uint32)
+dummy_write = np.zeros((1, 60000), dtype=np.uint32)
 
-task = DoAiCallbackTask("Mod2/ai3", 1, "Mod1/port0/line0", 10000, 10, dummy_write, '/cDAQ/ai/SampleClock', 10000, 2, 2, 0.1)
+task = DoAiCallbackTask("Mod2/ai3", 1, "Mod1/port0/line0", 10000, 6, dummy_write, '/cDAQ/ai/SampleClock', 1000, 2, 2, 0.1)
 read = task.DoTask()
 
 plt.plot(read[0])
