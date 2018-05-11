@@ -62,14 +62,16 @@ class DoAiCallbackTask:
             if response:
                 print('animal licked')
                 DAQmxTaskControl(self.ai_handle, DAQmx_Val_Task_Abort)
+                DAQmxTaskControl(self.do_handle, DAQmx_Val_Task_Abort)
                 # self.ClearTasks()
                 return 0
 
-        # if self.callback_counter > 5:
-        #     print('stopping')
-        #     DAQmxTaskControl(self.ai_handle, DAQmx_Val_Task_Abort)
-        #     # self.ClearTasks()
-        #     return 0
+        if self.callback_counter > 2:
+            print('stopping')
+            DAQmxTaskControl(self.ai_handle, DAQmx_Val_Task_Abort)
+            DAQmxTaskControl(self.do_handle, DAQmx_Val_Task_Abort)
+            # self.ClearTasks()
+            return 0
 
 
         return 0
@@ -116,7 +118,7 @@ class DoAiCallbackTask:
 
 dummy_write = np.zeros((1, 60000), dtype=np.uint32)
 
-task = DoAiCallbackTask("Mod2/ai3", 1, "Mod1/port0/line0", 10000, 6, dummy_write, '/cDAQ/ai/SampleClock', 1000, 2, 2, 0.1)
+task = DoAiCallbackTask("Mod2/ai3", 1, "Mod1/port0/line0", 10000, 6, dummy_write, '/cDAQ/ai/SampleClock', 10000, 2, 2, 0.1)
 read = task.DoTask()
 
 plt.plot(read[0])

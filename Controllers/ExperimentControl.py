@@ -54,10 +54,11 @@ class ExperimentWorker(QtCore.QObject):
                                                  float(current_trial_pulse[0]['lick_fraction']))
 
                 trial_daq.DoTask()
-                delay = (time() - start)
-                print("delay is: {}".format(delay))
+                # delay = (time() - start)
+                # print("delay is: {}".format(delay))
                 analog_data = trial_daq.analog_data
-                self.experiment.last_data = analog_data
+                lick_data = analog_data[self.hardware_prefs['lick_channel']]
+                self.experiment.last_data = lick_data
 
                 """ Analyse the lick response """
                 rewarded = current_trial[0]
@@ -65,7 +66,9 @@ class ExperimentWorker(QtCore.QObject):
                 # TODO - reference to rewarded (current_trial[0]) and lick fraction are bug prone here.
                 # TODO - A little too inflexible
                 response = TrialConditions.lick_detect(lick_data_window, 2, float(current_trial_pulse[0]['lick_fraction']))
+                # print(response)
                 result, correct, timeout = TrialConditions.trial_result(rewarded, response)
+                print (result, correct, timeout)
 
                 """ Update database """
                 timestamp = datetime.datetime.now()
