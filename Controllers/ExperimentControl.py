@@ -62,13 +62,15 @@ class ExperimentWorker(QtCore.QObject):
 
                 """ Analyse the lick response """
                 rewarded = current_trial[0]
-                lick_data_window = trial_daq.response_window
+                lick_data_window = lick_data[(trial_daq.last_pos - trial_daq.response_length):trial_daq.last_pos]
+                print(lick_data_window.shape)
+                print(np.sum(lick_data_window))
                 # TODO - reference to rewarded (current_trial[0]) and lick fraction are bug prone here.
                 # TODO - A little too inflexible
                 response = TrialConditions.lick_detect(lick_data_window, 2, float(current_trial_pulse[0]['lick_fraction']))
-                # print(response)
+                print(response)
                 result, correct, timeout = TrialConditions.trial_result(rewarded, response)
-                print (result, correct, timeout)
+                print(result, correct, timeout)
 
                 """ Update database """
                 timestamp = datetime.datetime.now()
