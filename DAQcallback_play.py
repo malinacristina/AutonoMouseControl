@@ -1,6 +1,6 @@
 class DoAiCallbackTask:
     def __init__(self, ai_device, ai_channels, do_device, samp_rate, secs, write, sync_clock, samps_per_callback,
-                 response_length_secs, response_start_secs, lick_fraction):
+                 response_length_secs, response_start_secs, lick_fraction, lick_channel):
         self.ai_handle = TaskHandle(0)
         self.do_handle = TaskHandle(1)
         self.ai_channels = ai_channels
@@ -13,6 +13,7 @@ class DoAiCallbackTask:
         self.response_window = []
         self.last_pos = 0
         self.trial_length = samp_rate * secs
+        self.lick_channel = lick_channel
 
         # set up data buffers (analog)
         self.analog_data = numpy.zeros((self.ai_channels, self.total_length), dtype=numpy.float64)
@@ -40,7 +41,7 @@ class DoAiCallbackTask:
 
     def Callback(self, handle, every_n_samples_event_type, n_samples, data_pointer):
         self.callback_counter += 1
-        data_of_interest = self.analog_data[0][0:(self.samps_per_callback * self.callback_counter)]
+        data_of_interest = self.analog_data[self.lick_channel][0:(self.samps_per_callback * self.callback_counter)]
         # print(data_of_interest.shape)
         # print(numpy.sum(data_of_interest))
         print(self.callback_counter)
@@ -49,7 +50,7 @@ class DoAiCallbackTask:
         self.response_window = data_of_interest[(current_pos - self.response_length):current_pos]
         # print(self.response_window.shape)
 
-        if current_pos >= self.response_start:
+        if current_pos >= (self.response_start + self.response_length):
             response = self.AnalyseLicks(self.response_window, 2, self.lick_fraction)
             if response:
                 print('animal licked')

@@ -51,7 +51,8 @@ class ExperimentWorker(QtCore.QObject):
                                                  samps_per_callback,
                                                  response_length_secs,
                                                  response_start_secs,
-                                                 float(current_trial_pulse[0]['lick_fraction']))
+                                                 float(current_trial_pulse[0]['lick_fraction']),
+                                                 self.hardware_prefs['lick_channel'])
 
                 trial_daq.DoTask()
                 # delay = (time() - start)
