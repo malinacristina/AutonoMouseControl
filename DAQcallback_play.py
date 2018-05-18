@@ -1,3 +1,13 @@
+from PyDAQmx import *
+from PyDAQmx.DAQmxCallBack import *
+import numpy
+import numpy as np
+from ctypes import *
+import daqface.Utils as Util
+import matplotlib.pyplot as plt
+import daqface.DAQ as daq
+
+
 class DoAiCallbackTask:
     def __init__(self, ai_device, ai_channels, do_device, samp_rate, secs, write, sync_clock, samps_per_callback,
                  response_length_secs, response_start_secs, lick_fraction, lick_channel):
@@ -116,3 +126,25 @@ class DoAiCallbackTask:
 
         DAQmxClearTask(self.ai_handle)
         DAQmxClearTask(self.do_handle)
+
+
+dummy_write = np.zeros((1, 60000), dtype=np.uint32)
+reset_write = np.zeros((1, 2), dtype=np.uint32)
+counter = 0
+
+for i in range(1,10):
+    task = DoAiCallbackTask("Mod2/ai3", 1, "Mod1/port0/line0", 10000, 6, dummy_write, '/cDAQ/ai/SampleClock', 10000, 2, 2, 0.1, 0)
+    read = task.DoTask()
+    read_val = np.sum(read[0])
+    print(read_val)
+    if read_val == 0:
+        counter +=1
+
+    # reset_daq = daq.DoAiMultiTask("Mod2/ai3", 1, "Mod1/port0/line0", 10000, 2/10000, reset_write, '/cDAQ/ai/SampleClock')
+    # r = reset_daq.DoTask()
+    # print(r)
+
+print(counter)
+
+    # plt.plot(read[0])
+    # plt.show()
