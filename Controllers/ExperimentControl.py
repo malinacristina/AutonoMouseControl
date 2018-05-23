@@ -53,7 +53,6 @@ class ExperimentWorker(QtCore.QObject):
                                                  response_start_secs,
                                                  float(current_trial_pulse[0]['lick_fraction']),
                                                  self.hardware_prefs['lick_channel'])
-
                 trial_daq.DoTask()
                 # delay = (time() - start)
                 # print("delay is: {}".format(delay))
@@ -62,18 +61,18 @@ class ExperimentWorker(QtCore.QObject):
                 self.experiment.last_data = lick_data
 
                 """ Make sure all valves closed """
-                # sleep(0.05)     # to allow for the task to be fully aborted before doing something else with the daq - not ideal
-                # reset_write = np.zeros((len(pulses), 2))
-                # print(reset_write.shape)
-                # reset_daq = daq.DoAiMultiTask(self.hardware_prefs['analog_input'],
-                #                               self.hardware_prefs['analog_channels'],
-                #                               self.hardware_prefs['digital_output'],
-                #                               self.hardware_prefs['samp_rate'],
-                #                               2 / self.hardware_prefs['samp_rate'],
-                #                               reset_write,
-                #                               self.hardware_prefs['sync_clock'])
-                # r = reset_daq.DoTask()
-                # print(r)
+                sleep(0.05)     # to allow for the task to be fully aborted before doing something else with the daq - not ideal
+                reset_write = np.zeros((len(pulses), 2))
+                print(reset_write.shape)
+                reset_daq = daq.DoAiMultiTask(self.hardware_prefs['analog_input'],
+                                              self.hardware_prefs['analog_channels'],
+                                              self.hardware_prefs['digital_output'],
+                                              self.hardware_prefs['samp_rate'],
+                                              2 / self.hardware_prefs['samp_rate'],
+                                              reset_write,
+                                              self.hardware_prefs['sync_clock'])
+                r = reset_daq.DoTask()
+                print(r)
 
                 """ Analyse the lick response """
                 rewarded = current_trial[0]

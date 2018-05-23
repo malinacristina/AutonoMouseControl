@@ -4,6 +4,7 @@ import numpy
 import numpy as np
 from ctypes import *
 import daqface.Utils as Util
+import time
 import matplotlib.pyplot as plt
 import daqface.DAQ as daq
 
@@ -58,7 +59,7 @@ class DoAiCallbackTask:
 
         current_pos = self.samps_per_callback * self.callback_counter
         self.response_window = data_of_interest[(current_pos - self.response_length):current_pos]
-        # print(self.response_window.shape)
+        print(np.sum(self.response_window))
 
         if current_pos >= (self.response_start + self.response_length):
             response = self.AnalyseLicks(self.response_window, 2, self.lick_fraction)
@@ -132,19 +133,26 @@ dummy_write = np.zeros((1, 60000), dtype=np.uint32)
 reset_write = np.zeros((1, 2), dtype=np.uint32)
 counter = 0
 
+task = DoAiCallbackTask("Mod2/ai3", 1, "Mod1/port0/line0", 10000, 6, dummy_write, '/cDAQ/ai/SampleClock', 10000, 2, 2,
+                        0.1, 0)
+# read = task.DoTask()
+# read_sum = np.sum(read[0])
+# print(read_sum)
+
 for i in range(1,10):
     task = DoAiCallbackTask("Mod2/ai3", 1, "Mod1/port0/line0", 10000, 6, dummy_write, '/cDAQ/ai/SampleClock', 10000, 2, 2, 0.1, 0)
     read = task.DoTask()
-    read_val = np.sum(read[0])
-    print(read_val)
-    if read_val == 0:
+    time.sleep(0.05)
+    read_sum = np.sum(read[0])
+    print(read_sum)
+    if read_sum == 0:
         counter +=1
 
-    # reset_daq = daq.DoAiMultiTask("Mod2/ai3", 1, "Mod1/port0/line0", 10000, 2/10000, reset_write, '/cDAQ/ai/SampleClock')
-    # r = reset_daq.DoTask()
-    # print(r)
+    reset_daq = daq.DoAiMultiTask("Mod2/ai3", 1, "Mod1/port0/line0", 10000, 2/10000, reset_write, '/cDAQ/ai/SampleClock')
+    r = reset_daq.DoTask()
+    print(r)
 
 print(counter)
 
-    # plt.plot(read[0])
-    # plt.show()
+# plt.plot(read[0])
+# plt.show()
