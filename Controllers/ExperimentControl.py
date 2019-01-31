@@ -9,7 +9,7 @@ import HelperFunctions.RFID as rfid
 import HelperFunctions.Reward as reward
 import HelperFunctions.BeamCheck as beam
 import numpy as np
-import pandas as pd
+import threading
 
 
 class ExperimentWorker(QtCore.QObject):
@@ -39,9 +39,9 @@ class ExperimentWorker(QtCore.QObject):
                 pulses, t = PulseInterface.make_pulse(self.hardware_prefs['samp_rate'], 0.0, 0.0, current_trial_pulse)
 
                 """ Send the data to the DAQ """
-                samps_per_callback = 20000
+                samps_per_callback = 4000
                 response_length_secs = 2
-                response_start_secs = 2
+                response_start_secs = 0.5
                 trial_daq = daq.DoAiCallbackTask(self.hardware_prefs['analog_input'],
                                                  self.hardware_prefs['analog_channels'],
                                                  self.hardware_prefs['digital_output'],
@@ -53,6 +53,7 @@ class ExperimentWorker(QtCore.QObject):
                                                  response_start_secs,
                                                  float(current_trial_pulse[0]['lick_fraction']),
                                                  self.hardware_prefs['lick_channel'])
+                print("task is starting")
                 trial_daq.DoTask()
                 # delay = (time() - start)
                 # print("delay is: {}".format(delay))
@@ -60,31 +61,42 @@ class ExperimentWorker(QtCore.QObject):
                 lick_data = analog_data[self.hardware_prefs['lick_channel']]
                 self.experiment.last_data = lick_data
 
-                """ Make sure all valves closed """
-                sleep(0.05)     # to allow for the task to be fully aborted before doing something else with the daq - not ideal
-                reset_write = np.zeros((len(pulses), 2))
-                print(reset_write.shape)
-                reset_daq = daq.DoAiMultiTask(self.hardware_prefs['analog_input'],
-                                              self.hardware_prefs['analog_channels'],
-                                              self.hardware_prefs['digital_output'],
-                                              self.hardware_prefs['samp_rate'],
-                                              2 / self.hardware_prefs['samp_rate'],
-                                              reset_write,
-                                              self.hardware_prefs['sync_clock'])
-                r = reset_daq.DoTask()
-                print(r)
+                # """ Make sure all valves closed """
+                # sleep(0.05)     # to allow for the task to be fully aborted before doing something else with the daq - not ideal
+                # reset_write = np.zeros((len(pulses), 2))
+                # # print(reset_write.shape)
+                # reset_daq = daq.DoAiMultiTask(self.hardware_prefs['analog_input'],
+                #                               self.hardware_prefs['analog_channels'],
+                #                               self.hardware_prefs['digital_output'],
+                #                               self.hardware_prefs['samp_rate'],
+                #                               2 / self.hardware_prefs['samp_rate'],
+                #                               reset_write,
+                #                               self.hardware_prefs['sync_clock'])
+                # r = reset_daq.DoTask()
+                # print(r)
+                sleep(0.1)
+                print(threading.enumerate())
 
                 """ Analyse the lick response """
                 rewarded = current_trial[0]
-                lick_data_window = lick_data[(trial_daq.last_pos - trial_daq.response_length):trial_daq.last_pos]
+
+                last_pos = None
+                for index, value in enumerate(self.experiment.last_data):
+                    if value != 0:
+                        last_pos = index
+                lick_data_window = lick_data[(last_pos - response_length_secs*self.hardware_prefs['samp_rate']):last_pos]
                 print(lick_data_window.shape)
                 print(np.sum(lick_data_window))
                 # TODO - reference to rewarded (current_trial[0]) and lick fraction are bug prone here.
                 # TODO - A little too inflexible
+
+                if (np.sum(lick_data_window) == 0):
+                    lick_data_window = np.zeros(1)    # lazy way of making it not crash it if fails to read; a trial where reading failed is considered not licked;
+
                 response = TrialConditions.lick_detect(lick_data_window, 2, float(current_trial_pulse[0]['lick_fraction']))
-                print(response)
+                # print(response)
                 result, correct, timeout = TrialConditions.trial_result(rewarded, response)
-                print(result, correct, timeout)
+                # print(result, correct, timeout)
 
                 """ Update database """
                 timestamp = datetime.datetime.now()

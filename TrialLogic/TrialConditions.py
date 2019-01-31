@@ -18,7 +18,6 @@ def lick_detect(lick_data, threshold, percent_accepted):
     percent_responded = np.sum(lick_response) / len(lick_response)
 
     # return whether this is accepted as a response or not
-    # return whether this is accepted as a response or not
     return percent_responded >= percent_accepted
 
 

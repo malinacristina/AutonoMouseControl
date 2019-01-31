@@ -95,6 +95,7 @@ class DoAiCallbackTask:
             pass
 
 
+
         # self.ClearTasks()
         return self.analog_data
 
