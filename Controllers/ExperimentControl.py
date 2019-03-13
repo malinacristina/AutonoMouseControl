@@ -39,7 +39,7 @@ class ExperimentWorker(QtCore.QObject):
                 pulses, t = PulseInterface.make_pulse(self.hardware_prefs['samp_rate'], 0.0, 0.0, current_trial_pulse)
 
                 """ Send the data to the DAQ """
-                samps_per_callback = 4000
+                samps_per_callback = 1000
                 response_length_secs = 2
                 response_start_secs = 0.5
                 trial_daq = daq.DoAiCallbackTask(self.hardware_prefs['analog_input'],
