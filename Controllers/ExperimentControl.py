@@ -42,17 +42,17 @@ class ExperimentWorker(QtCore.QObject):
                 samps_per_callback = 1000
                 response_length_secs = 2
                 response_start_secs = 0.5
-                trial_daq = daq.DoAiCallbackTask(self.hardware_prefs['analog_input'],
-                                                 self.hardware_prefs['analog_channels'],
-                                                 self.hardware_prefs['digital_output'],
-                                                 self.hardware_prefs['samp_rate'],
-                                                 len(t) / self.hardware_prefs['samp_rate'],
-                                                 pulses, self.hardware_prefs['sync_clock'],
-                                                 samps_per_callback,
-                                                 response_length_secs,
-                                                 response_start_secs,
-                                                 float(current_trial_pulse[0]['lick_fraction']),
-                                                 self.hardware_prefs['lick_channel'])
+                trial_daq = daq.JonTask(self.hardware_prefs['analog_input'],
+                                        self.hardware_prefs['analog_channels'],
+                                        self.hardware_prefs['digital_output'],
+                                        self.hardware_prefs['samp_rate'],
+                                        len(t) / self.hardware_prefs['samp_rate'],
+                                        pulses, self.hardware_prefs['sync_clock'],
+                                        samps_per_callback,
+                                        response_length_secs,
+                                        response_start_secs,
+                                        float(current_trial_pulse[0]['lick_fraction']),
+                                        self.hardware_prefs['lick_channel'])
                 print("task is starting")
                 trial_daq.DoTask()
                 # delay = (time() - start)
@@ -84,14 +84,14 @@ class ExperimentWorker(QtCore.QObject):
                 for index, value in enumerate(self.experiment.last_data):
                     if value != 0:
                         last_pos = index
-                lick_data_window = lick_data[(last_pos - response_length_secs*self.hardware_prefs['samp_rate']):last_pos]
+                lick_data_window = lick_data[(last_pos - response_length_secs * self.hardware_prefs['samp_rate']):last_pos]
                 print(lick_data_window.shape)
                 print(np.sum(lick_data_window))
                 # TODO - reference to rewarded (current_trial[0]) and lick fraction are bug prone here.
                 # TODO - A little too inflexible
 
                 if (np.sum(lick_data_window) == 0):
-                    lick_data_window = np.zeros(1)    # lazy way of making it not crash it if fails to read; a trial where reading failed is considered not licked;
+                    lick_data_window = np.zeros(1)  # lazy way of making it not crash it if fails to read; a trial where reading failed is considered not licked;
 
                 response = TrialConditions.lick_detect(lick_data_window, 2, float(current_trial_pulse[0]['lick_fraction']))
                 # print(response)
