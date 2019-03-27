@@ -18,6 +18,7 @@ class ExperimentWorker(QtCore.QObject):
 
     def __init__(self, parent=None):
         super(self.__class__, self).__init__(None)
+        self.debug = False
         self.parent = parent
         self.hardware_prefs = self.parent.parent.hardware_prefs
         self.experiment = self.parent.parent.experiment
@@ -131,10 +132,17 @@ class ExperimentWorker(QtCore.QObject):
         # checks whether animal is present in the port - DEBUG
         # return np.random.rand() > 0.999999
 
-        return beam.check_beam(self.hardware_prefs['analog_input'], self.hardware_prefs['analog_channels'],
-                               self.hardware_prefs['beam_channel'])
+        if self.debug:
+            return True
+
+        return beam.check_beam(self.hardware_prefs['analog_input'], self.hardware_prefs['analog_channels'], self.hardware_prefs['beam_channel'])
 
     def get_present_animal(self):
+
+        # JON CHANGES
+        if self.debug:
+            return self.experiment.animal_list['default']
+
         # returns the animal in the port - DEBUG just chooses a random animal
         # animals = list(self.experiment.animal_list.keys())
         # animal = random.choice(animals)
