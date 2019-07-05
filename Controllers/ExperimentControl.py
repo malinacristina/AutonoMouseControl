@@ -42,7 +42,7 @@ class ExperimentWorker(QtCore.QObject):
                 """ Send the data to the DAQ """
                 samps_per_callback = 1000
                 response_length_secs = 2
-                response_start_secs = 0.5
+                response_start_secs = 0.1
                 trial_daq = daq.JonTask(self.hardware_prefs['analog_input'],
                                         self.hardware_prefs['analog_channels'],
                                         self.hardware_prefs['digital_output'],
@@ -62,21 +62,20 @@ class ExperimentWorker(QtCore.QObject):
                 lick_data = analog_data[self.hardware_prefs['lick_channel']]
                 self.experiment.last_data = lick_data
 
-                # """ Make sure all valves closed """
-                # sleep(0.05)     # to allow for the task to be fully aborted before doing something else with the daq - not ideal
-                # reset_write = np.zeros((len(pulses), 2))
-                # # print(reset_write.shape)
-                # reset_daq = daq.DoAiMultiTask(self.hardware_prefs['analog_input'],
-                #                               self.hardware_prefs['analog_channels'],
-                #                               self.hardware_prefs['digital_output'],
-                #                               self.hardware_prefs['samp_rate'],
-                #                               2 / self.hardware_prefs['samp_rate'],
-                #                               reset_write,
-                #                               self.hardware_prefs['sync_clock'])
-                # r = reset_daq.DoTask()
-                # print(r)
-                sleep(0.1)
-                print(threading.enumerate())
+                """ Make sure all valves closed """
+                sleep(0.05)     # to allow for the task to be fully aborted before doing something else with the daq
+                reset_write = np.zeros((len(pulses), 2))
+                print(reset_write.shape)
+                reset_daq = daq.DoAiMultiTask(self.hardware_prefs['analog_input'],
+                                              self.hardware_prefs['analog_channels'],
+                                              self.hardware_prefs['digital_output'],
+                                              self.hardware_prefs['samp_rate'],
+                                              2 / self.hardware_prefs['samp_rate'],
+                                              reset_write,
+                                              self.hardware_prefs['sync_clock'])
+                r = reset_daq.DoTask()
+                print('closing valves')
+                #sleep(0.1)
 
                 """ Analyse the lick response """
                 rewarded = current_trial[0]
@@ -124,7 +123,7 @@ class ExperimentWorker(QtCore.QObject):
                 print('\n')
                 self.trial_end.emit()
 
-            sleep(1.0)
+            sleep(3.0)  # inter trial interval length (s)
 
         self.finished.emit()
 
@@ -203,6 +202,8 @@ class ExperimentController:
             if not self.should_run:
                 self.should_run = True
                 self.thread.start()
+                print('Experiment started')
+                print(datetime.datetime.now())
         else:
             QtWidgets.QMessageBox.about(self.parent, "Error", "Experiment not saved! Please save before starting.")
 
@@ -211,3 +212,5 @@ class ExperimentController:
             self.should_run = False
             self.thread.terminate()
             self.thread.wait()
+            print('Experiment stopped')
+            print(datetime.datetime.now())
